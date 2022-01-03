@@ -44,9 +44,10 @@ class DittoDataset(data.Dataset):
             
             num1 = self.convert_string_to_float_tensor(num1)
             num2 = self.convert_string_to_float_tensor(num2)
-            self.num_pairs.append((num1, num2))[:size]
+            self.num_pairs.append((num1, num2))
 
         self.pairs = self.pairs[:size]
+        self.num_pairs = self.num_pairs[:size]
         self.labels = self.labels[:size]
         self.da = da
         if da is not None:
