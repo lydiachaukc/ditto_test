@@ -46,7 +46,7 @@ class DKInjector:
                     if len(LL) == 3:
                         entry0 = self.transform(LL[0])
                         entry1 = self.transform(LL[1])
-                        fout.write(entry0 + '\t' + entry1 + '\t' + LL[2])
+                        fout.write(entry0 + '\t' + entry1 + '\t' + LL[2] + '\t' + LL[3] + '\t' + LL[4])
         return out_fn
 
 

@@ -37,9 +37,13 @@ class DittoDataset(data.Dataset):
             lines = open(path)
 
         for line in lines:
-            s1, s2, label = line.strip().split('\t')
+            s1, s2, num1, num2, label = line.strip().split('\t')
             self.pairs.append((s1, s2))
             self.labels.append(int(label))
+            
+            num1 = self.convert_string_to_float_tensor(num1)
+            num2 = self.convert_string_to_float_tensor(num2)
+            self.num_pairs.append((num1, num2))[:size]
 
         self.pairs = self.pairs[:size]
         self.labels = self.labels[:size]
@@ -86,9 +90,12 @@ class DittoDataset(data.Dataset):
                                               truncation=True,
                                               return_attention_mask = True,
                                               return_token_type_ids = True)
-            return x["input_ids"], x_aug["input_ids"], self.labels[idx]
+            return x["input_ids"], self.labels[idx], x["attention_mask"], x["token_type_ids"],\
+                self.num_pairs[idx][0], self.num_pairs[idx][1], \
+                    x_aug["input_ids"], x_aug["attention_mask"], x_aug["token_type_ids"]
         else:
-            return x["input_ids"], self.labels[idx], x["attention_mask"], x["token_type_ids"]
+            return x["input_ids"], self.labels[idx], x["attention_mask"], x["token_type_ids"], \
+                self.num_pairs[idx][0], self.num_pairs[idx][1]
 
 
     @staticmethod
@@ -113,12 +120,17 @@ class DittoDataset(data.Dataset):
                    torch.LongTensor(x2), \
                    torch.LongTensor(y)
         else:
-            x12, y, attention_mask, token_type_ids = zip(*batch)
+            x12, y, attention_mask, token_type_ids, num1, num2 = zip(*batch)
             maxlen = max([len(x) for x in x12])
             x12 = [xi + [0]*(maxlen - len(xi)) for xi in x12]
             attention_mask = [xi + [0]*(maxlen - len(xi)) for xi in attention_mask]
             token_type_ids = [xi + [0]*(maxlen - len(xi)) for xi in token_type_ids]
+            num1 = [torch.tensor(xi, dtype=torch.float32) for xi in num1]
+            num2 = [torch.tensor(xi, dtype=torch.float32) for xi in num2]
+            
             return torch.LongTensor(x12), \
                    torch.LongTensor(y), \
                    torch.LongTensor(attention_mask), \
-                   torch.LongTensor(token_type_ids)
+                   torch.LongTensor(token_type_ids), \
+                   torch.tensor(num1), \
+                   torch.tensor(num2)

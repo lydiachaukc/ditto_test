@@ -58,13 +58,14 @@ if __name__=="__main__":
     trainset = config['trainset']
     validset = config['validset']
     testset = config['testset']
+    numeric_feature_cols = config['number_feature_columns']
 
     # summarize the sequences up to the max sequence length
     if hp.summarize:
         summarizer = Summarizer(config, lm=hp.lm)
-        trainset = summarizer.transform_file(trainset, max_len=hp.max_len)
-        validset = summarizer.transform_file(validset, max_len=hp.max_len)
-        testset = summarizer.transform_file(testset, max_len=hp.max_len)
+        trainset = summarizer.transform_file(trainset, max_len=hp.max_len, numeric_col_names=numeric_feature_cols)
+        validset = summarizer.transform_file(validset, max_len=hp.max_len, numeric_col_names=numeric_feature_cols)
+        testset = summarizer.transform_file(testset, max_len=hp.max_len, numeric_col_names=numeric_feature_cols)
 
     if hp.dk is not None:
         if hp.dk == 'product':

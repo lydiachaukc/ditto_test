@@ -52,8 +52,8 @@ class DittoModel(nn.Module):
             num_hidden_lyr = num_hidden_lyr,
             dropout_prob = 0.2)
 
-
-    def forward(self, x1, attention_mask, token_type_ids, x2=None):
+    def forward(self, x1, attention_mask, token_type_ids, num1, num2, 
+                x2=None, attention_mask_aug=None, token_type_id_aug=None):
         """Encode the left, right, and the concatenation of left+right.
 
         Args:
@@ -66,6 +66,9 @@ class DittoModel(nn.Module):
         x1 = x1.to(self.device) # (batch_size, seq_len)
         attention_mask = attention_mask.to(self.device)
         token_type_ids = token_type_ids.to(self.device)
+        num1 = num1.to(self.device)
+        num2 = num2.to(self.device)
+        
         if x2 is not None:
             # MixDA
             x2 = x2.to(self.device) # (batch_size, seq_len)
@@ -106,8 +109,8 @@ def evaluate(model, iterator, threshold=None):
     all_probs = []
     with torch.no_grad():
         for batch in iterator:
-            x, y, attention_mask, token_type_ids= batch
-            logits = model(x, attention_mask, token_type_ids)
+            x, y , attention_mask, token_type_ids, num1, num2 = batch
+            logits = model(x, attention_mask, token_type_ids, num1, num2)
             probs = logits.softmax(dim=1)[:, 1]
             all_probs += probs.cpu().numpy().tolist()
             all_y += y.cpu().numpy().tolist()
@@ -147,12 +150,12 @@ def train_step(train_iter, model, optimizer, scheduler, hp):
     for i, batch in enumerate(train_iter):
         optimizer.zero_grad()
 
-        # if len(batch) == 2:
-        x, y , attention_mask, token_type_ids = batch
-        prediction = model(x, attention_mask, token_type_ids)
+        # if len(batch) == 6:
+        x, y , attention_mask, token_type_ids, num1, num2 = batch
+        prediction = model(x, attention_mask, token_type_ids, num1, num2)
         # else:
-        #     x1, x2, y = batch
-        #     prediction = model(x1, x2)
+        #     x, y, attention_mask, token_type_ids, num1, num2, x_aug, attention_mask_aug, token_type_ids_aug = batch
+        #     prediction = model(x, y, attention_mask, token_type_ids, num1, num2, x_aug, attention_mask_aug, token_type_ids_aug)
 
         loss = criterion(prediction, y.to(model.device))
 
