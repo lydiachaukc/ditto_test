@@ -12,6 +12,7 @@ import argparse
 from .dataset import DittoDataset
 from torch.utils import data
 from transformers import AutoModel, AdamW, get_linear_schedule_with_warmup
+from torch.utils.data import DataLoader, WeightedRandomSampler, SequentialSampler, TensorDataset, RandomSampler
 from tensorboardX import SummaryWriter
 from apex import amp
 
@@ -195,11 +196,7 @@ def train(trainset, validset, testset, run_tag, hp):
     """
     padder = trainset.pad
     # create the DataLoaders
-    train_iter = data.DataLoader(dataset=trainset,
-                                 batch_size=hp.batch_size,
-                                 shuffle=True,
-                                 num_workers=0,
-                                 collate_fn=padder)
+    train_iter = prepare_data_loader(trainset, hp.batch_size, padder)
     valid_iter = data.DataLoader(dataset=validset,
                                  batch_size=hp.batch_size*16,
                                  shuffle=False,
@@ -270,3 +267,28 @@ def train(trainset, validset, testset, run_tag, hp):
 
     writer.close()
     output.to_csv(hp.logdir + "result.csv", index = False)
+    
+def prepare_data_loader(dataset, batch_size, padder, wighted = True):
+
+    if not wighted:
+        return DataLoader(dataset=dataset,
+                            batch_size=batch_size,
+                            shuffle=True,
+                            num_workers=0,
+                            collate_fn=padder,
+                            drop_last = True)
+     
+    # handle unbalanced data
+    positive = sum(dataset.labels)
+    counts = len(dataset.labels)
+    negative = counts - positive
+    weights = [lab / positive + (1-lab) / negative for lab in dataset.labels]
+    
+    
+    return DataLoader(dataset=dataset,
+                    sampler = WeightedRandomSampler(weights, counts),
+                    batch_size = batch_size,
+                    num_workers=0,
+                    collate_fn=padder,
+                    drop_last = True
+                )
