@@ -37,7 +37,7 @@ class DittoModel(nn.Module):
 
         # linear layer
         hidden_size = self.bert.config.hidden_size
-        # self.fc = torch.nn.Linear(hidden_size, 2)
+        self.classifier = torch.nn.Linear(hidden_size, 2)
         
         # #---new
         # if (config.num_input_dimension != 1):
@@ -46,11 +46,11 @@ class DittoModel(nn.Module):
         # else:
         #     self.calculate_similiarity = self.calculate_difference
         
-        self.classifier = classification_NN(
-            #inputs_dimension = 1 + config.text_input_dimension,
-            inputs_dimension = hidden_size,
-            num_hidden_lyr = num_hidden_lyr,
-            dropout_prob = 0.2)
+        # self.classifier = classification_NN(
+        #     #inputs_dimension = 1 + config.text_input_dimension,
+        #     inputs_dimension = hidden_size,
+        #     num_hidden_lyr = num_hidden_lyr,
+        #     dropout_prob = 0.2)
 
     def forward(self, x1, attention_mask, token_type_ids, num1, num2, 
                 x2=None, attention_mask_aug=None, token_type_id_aug=None):
