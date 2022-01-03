@@ -175,7 +175,7 @@ def train_step(train_iter, model, optimizer, scheduler, hp):
         del loss
 
 
-def train(trainset, validset, testset, run_tag, hp, num_input_dimension):
+def train(trainset, validset, testset, run_tag, hp):
     """Train and evaluate the model
 
     Args:
@@ -212,7 +212,7 @@ def train(trainset, validset, testset, run_tag, hp, num_input_dimension):
     model = DittoModel(device=device,
                        lm=hp.lm,
                        alpha_aug=hp.alpha_aug,
-                       num_input_dimension=num_input_dimension)
+                       num_input_dimension=len(trainset.num_pairs[0][0]))
     model = model.cuda()
     optimizer = AdamW(model.parameters(), lr=hp.lr)
 
