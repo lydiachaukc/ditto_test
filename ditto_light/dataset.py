@@ -96,7 +96,9 @@ class DittoDataset(data.Dataset):
         else:
             return x["input_ids"], self.labels[idx], x["attention_mask"], x["token_type_ids"], \
                 self.num_pairs[idx][0], self.num_pairs[idx][1]
-
+    
+    def convert_string_to_float_tensor(self, num_str):
+        return list(map(float,num_str.strip().split(" ")))
 
     @staticmethod
     def pad(batch):
