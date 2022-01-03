@@ -66,8 +66,8 @@ class DittoModel(nn.Module):
         x1 = x1.to(self.device) # (batch_size, seq_len)
         attention_mask = attention_mask.to(self.device)
         token_type_ids = token_type_ids.to(self.device)
-        num1 = num1.to(self.device)
-        num2 = num2.to(self.device)
+        # num1 = num1.to(self.device)
+        # num2 = num2.to(self.device)
         
         if x2 is not None:
             # MixDA
