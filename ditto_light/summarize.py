@@ -168,5 +168,5 @@ class Summarizer:
             with open(out_fn, 'w') as fout:
                 for line in open(input_fn):
                     fout.write(self.transform(
-                        line, max_len=max_len,numeric_col_names=numeric_col_names)
+                        line, max_len=max_len,numeric_col_names=numeric_col_names))
         return out_fn
