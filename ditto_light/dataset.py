@@ -27,6 +27,7 @@ class DittoDataset(data.Dataset):
                  da=None):
         self.tokenizer = get_tokenizer(lm)
         self.pairs = []
+        self.num_pairs = []
         self.labels = []
         self.max_len = max_len
         self.size = size
