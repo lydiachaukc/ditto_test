@@ -115,17 +115,32 @@ class DittoDataset(data.Dataset):
             LongTensor: a batch of labels, (batch_size,)
         """
         if len(batch[0]) == 3:
-            x1, x2, y = zip(*batch)
+            x1, y, attention_mask, token_type_ids, num1, num2, x_aug, attention_mask_aug, token_type_ids_aug = zip(*batch)
 
-            maxlen = max([len(x) for x in x1+x2])
+            maxlen = max([len(x) for x in x1+x_aug])
             x1 = [xi + [0]*(maxlen - len(xi)) for xi in x1]
-            x2 = [xi + [0]*(maxlen - len(xi)) for xi in x2]
+            attention_mask = [xi + [0]*(maxlen - len(xi)) for xi in attention_mask]
+            token_type_ids = [xi + [0]*(maxlen - len(xi)) for xi in token_type_ids]
+            num1 = [torch.tensor(xi, dtype=torch.float32) for xi in num1]
+            num2 = [torch.tensor(xi, dtype=torch.float32) for xi in num2]
+            
+            x_aug = [xi + [0]*(maxlen - len(xi)) for xi in x_aug]
+            attention_mask_aug = [xi + [0]*(maxlen - len(xi)) for xi in attention_mask_aug]
+            token_type_ids_aug = [xi + [0]*(maxlen - len(xi)) for xi in token_type_ids_aug]
+            
             return torch.LongTensor(x1), \
-                   torch.LongTensor(x2), \
-                   torch.LongTensor(y)
+                   torch.LongTensor(y), \
+                   torch.LongTensor(attention_mask), \
+                   torch.LongTensor(token_type_ids), \
+                   torch.tensor(num1), \
+                   torch.tensor(num2), \
+                   torch.LongTensor(x_aug), \
+                   torch.LongTensor(attention_mask_aug), \
+                   torch.LongTensor(token_type_ids_aug)
         else:
             x12, y, attention_mask, token_type_ids, num1, num2 = zip(*batch)
             maxlen = max([len(x) for x in x12])
+            
             x12 = [xi + [0]*(maxlen - len(xi)) for xi in x12]
             attention_mask = [xi + [0]*(maxlen - len(xi)) for xi in attention_mask]
             token_type_ids = [xi + [0]*(maxlen - len(xi)) for xi in token_type_ids]

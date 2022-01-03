@@ -1,11 +1,9 @@
 import os
 import time
 
-datasets = """Dirty/DBLP-GoogleScholar
-Dirty/iTunes-Amazon
+datasets = """Dirty/iTunes-Amazon
 Dirty/Walmart-Amazon
 Structured/Amazon-Google
-Structured/Beer
 Structured/Walmart-Amazon
 Textual/Abt-Buy
 Textual/Company""".split('\n')
@@ -19,21 +17,13 @@ special_datasets = {
 
 ops = """swap
 swap
-append_col
-del
-swap
-drop_col
 swap
 swap
-append_col
-drop_col
-drop_col
 swap
-del""".split('\n')
+swap""".split('\n')
 
 
-lms = ['bert', 'bert', 'bert', 'bert', 'bert', 'bert',
-       'bert', 'bert']
+lms = ['bert-base-uncased', 'bert-base-uncased', 'bert-base-uncased', 'bert-base-uncased', 'bert-base-uncased', 'bert-base-uncased']
 
 # lms = ['xlnet', 'roberta', 'roberta', 'roberta', 'xlnet', 'bert',
 #        'bert', 'xlnet', 'roberta', 'bert', 'roberta', 'roberta', 'bert']
@@ -51,7 +41,7 @@ for dataset, op, lm in zip(datasets, ops, lms):
 
     for da in [True, False]:
         for dk in [True, False]:
-            for run_id in range(5):
+            for run_id in range(1):
                 cmd = """python train_ditto.py \
               --task %s \
               --logdir results_ditto/ \

@@ -47,8 +47,7 @@ class DittoModel(nn.Module):
             self.calculate_similiarity = self.calculate_difference
         
         # self.classifier = classification_NN(
-        #     #inputs_dimension = 1 + config.text_input_dimension,
-        #     inputs_dimension = hidden_size,
+        #     #inputs_dimension = 1 + hidden_size,
         #     num_hidden_lyr = num_hidden_lyr,
         #     dropout_prob = 0.2)
 
@@ -75,7 +74,10 @@ class DittoModel(nn.Module):
         if x2 is not None:
             # MixDA
             x2 = x2.to(self.device) # (batch_size, seq_len)
-            enc = self.bert(torch.cat((x1, x2)))[0][:, 0, :]
+            enc = self.bert(input_ids =torch.cat((x1, x2)),
+                            attention_mask  = torch.cat((attention_mask, attention_mask_aug)),
+                            token_type_ids = torch.cat((token_type_ids, token_type_id_aug))
+                            )[0][:, 0, :]
             batch_size = len(x1)
             enc1 = enc[:batch_size] # (batch_size, emb_size)
             enc2 = enc[batch_size:] # (batch_size, emb_size)
@@ -153,12 +155,12 @@ def train_step(train_iter, model, optimizer, scheduler, hp):
     for i, batch in enumerate(train_iter):
         optimizer.zero_grad()
 
-        # if len(batch) == 6:
-        x, y , attention_mask, token_type_ids, num1, num2 = batch
-        prediction = model(x, attention_mask, token_type_ids, num1, num2)
-        # else:
-        #     x, y, attention_mask, token_type_ids, num1, num2, x_aug, attention_mask_aug, token_type_ids_aug = batch
-        #     prediction = model(x, y, attention_mask, token_type_ids, num1, num2, x_aug, attention_mask_aug, token_type_ids_aug)
+        if len(batch) == 6:
+            x, y, attention_mask, token_type_ids, num1, num2 = batch
+            prediction = model(x, attention_mask, token_type_ids, num1, num2)
+        else:
+            x, y, attention_mask, token_type_ids, num1, num2, x_aug, attention_mask_aug, token_type_ids_aug = batch
+            prediction = model(x, attention_mask, token_type_ids, num1, num2, x_aug, attention_mask_aug, token_type_ids_aug)
 
         loss = criterion(prediction, y.to(model.device))
 
@@ -167,7 +169,7 @@ def train_step(train_iter, model, optimizer, scheduler, hp):
                 scaled_loss.backward()
         else:
             loss.backward()
-        # loss.backward()
+        
         optimizer.step()
         scheduler.step()
         if i % 10 == 0: # monitoring
