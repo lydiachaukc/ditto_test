@@ -17,7 +17,7 @@ from apex import amp
 
 import pandas as pd
 from ditto_light.classification_NN import classification_NN
-# from torch.nn import CosineSimilarity
+from torch.nn import CosineSimilarity
 
 lm_mp = {'roberta': 'roberta-base',
          'distilbert': 'distilbert-base-uncased'}
@@ -25,7 +25,7 @@ lm_mp = {'roberta': 'roberta-base',
 class DittoModel(nn.Module):
     """A baseline model for EM."""
 
-    def __init__(self, device='cuda', lm='roberta', alpha_aug=0.8, num_hidden_lyr=1):
+    def __init__(self, device='cuda', lm='roberta', alpha_aug=0.8, num_hidden_lyr=1, num_input_dimension=1):
         super().__init__()
         if lm in lm_mp:
             self.bert = AutoModel.from_pretrained(lm_mp[lm])
@@ -37,14 +37,14 @@ class DittoModel(nn.Module):
 
         # linear layer
         hidden_size = self.bert.config.hidden_size
-        self.classifier = torch.nn.Linear(hidden_size, 2)
+        self.classifier = torch.nn.Linear((num_input_dimension + hidden_size), 2)
         
-        # #---new
-        # if (config.num_input_dimension != 1):
-        #     cos = CosineSimilarity()
-        #     self.calculate_similiarity = lambda a, b: cos(a,b).view(-1,1)
-        # else:
-        #     self.calculate_similiarity = self.calculate_difference
+        #---new
+        if (num_input_dimension != 1):
+            cos = CosineSimilarity()
+            self.calculate_similiarity = lambda a, b: cos(a,b).view(-1,1)
+        else:
+            self.calculate_similiarity = self.calculate_difference
         
         # self.classifier = classification_NN(
         #     #inputs_dimension = 1 + config.text_input_dimension,
@@ -66,8 +66,11 @@ class DittoModel(nn.Module):
         x1 = x1.to(self.device) # (batch_size, seq_len)
         attention_mask = attention_mask.to(self.device)
         token_type_ids = token_type_ids.to(self.device)
-        # num1 = num1.to(self.device)
-        # num2 = num2.to(self.device)
+        
+        num1 = num1.to(self.device)
+        num2 = num2.to(self.device)
+        # calculate cossine similiary of numeric features
+        numerical_features = self.calculate_similiarity(num1, num2)
         
         if x2 is not None:
             # MixDA
@@ -84,8 +87,8 @@ class DittoModel(nn.Module):
                             attention_mask  = attention_mask,
                             token_type_ids = token_type_ids
                             )[0][:, 0, :]
-
-        return self.classifier(enc) # .squeeze() # .sigmoid()
+            
+        return self.classifier(torch.cat((enc, numerical_features.view(-1,1)), dim=1))
     
     def calculate_difference(self, tensorA, tensorB):
         return torch.nan_to_num(torch.abs(tensorA - tensorB) *2 / (tensorA + tensorB))
@@ -172,7 +175,7 @@ def train_step(train_iter, model, optimizer, scheduler, hp):
         del loss
 
 
-def train(trainset, validset, testset, run_tag, hp):
+def train(trainset, validset, testset, run_tag, hp, num_input_dimension):
     """Train and evaluate the model
 
     Args:
@@ -208,7 +211,8 @@ def train(trainset, validset, testset, run_tag, hp):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = DittoModel(device=device,
                        lm=hp.lm,
-                       alpha_aug=hp.alpha_aug)
+                       alpha_aug=hp.alpha_aug,
+                       num_input_dimension=num_input_dimension)
     model = model.cuda()
     optimizer = AdamW(model.parameters(), lr=hp.lr)
 
