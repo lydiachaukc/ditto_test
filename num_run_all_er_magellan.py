@@ -52,8 +52,7 @@ for dataset, op, lm in zip(datasets, ops, lms):
               --lm %s \
               --n_epochs %d \
               --run_id %d""" % (dataset, batch_size, lm, epochs, run_id)
-                if 'Company' in dataset:
-                    cmd += ' --summarize'
+              --summarize'
                 if da:
                     cmd += ' --da %s' % op
                 if dk:
