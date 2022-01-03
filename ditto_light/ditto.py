@@ -74,6 +74,8 @@ class DittoModel(nn.Module):
         if x2 is not None:
             # MixDA
             x2 = x2.to(self.device) # (batch_size, seq_len)
+            attention_mask_aug = attention_mask_aug.to(self.device)
+            token_type_id_aug = token_type_id_aug.to(self.device)
             enc = self.bert(input_ids =torch.cat((x1, x2)),
                             attention_mask  = torch.cat((attention_mask, attention_mask_aug)),
                             token_type_ids = torch.cat((token_type_ids, token_type_id_aug))
