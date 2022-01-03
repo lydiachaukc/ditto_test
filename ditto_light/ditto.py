@@ -15,6 +15,10 @@ from transformers import AutoModel, AdamW, get_linear_schedule_with_warmup
 from tensorboardX import SummaryWriter
 from apex import amp
 
+import pandas as pd
+# from ditto_light.classification_NN import classification_NN
+# from torch.nn import CosineSimilarity
+
 lm_mp = {'roberta': 'roberta-base',
          'distilbert': 'distilbert-base-uncased'}
 
@@ -34,9 +38,22 @@ class DittoModel(nn.Module):
         # linear layer
         hidden_size = self.bert.config.hidden_size
         self.fc = torch.nn.Linear(hidden_size, 2)
+        
+        # #---new
+        # if (config.num_input_dimension != 1):
+        #     cos = CosineSimilarity()
+        #     self.calculate_similiarity = lambda a, b: cos(a,b).view(-1,1)
+        # else:
+        #     self.calculate_similiarity = self.calculate_difference
+            
+        # self.classifier = classification_NN(
+        #     #inputs_dimension = 1 + config.text_input_dimension,
+        #     inputs_dimension = config.text_input_dimension,
+        #     num_hidden_lyr = config.num_hidden_lyr,
+        #     dropout_prob = 0.2)
 
 
-    def forward(self, x1, attention_mask, x2=None):
+    def forward(self, x1, attention_mask, token_type_ids, x2=None):
         """Encode the left, right, and the concatenation of left+right.
 
         Args:
@@ -48,6 +65,7 @@ class DittoModel(nn.Module):
         """
         x1 = x1.to(self.device) # (batch_size, seq_len)
         attention_mask = attention_mask.to(self.device)
+        token_type_ids = token_type_ids.to(self.device)
         if x2 is not None:
             # MixDA
             x2 = x2.to(self.device) # (batch_size, seq_len)
@@ -59,11 +77,15 @@ class DittoModel(nn.Module):
             aug_lam = np.random.beta(self.alpha_aug, self.alpha_aug)
             enc = enc1 * aug_lam + enc2 * (1.0 - aug_lam)
         else:
-            enc = self.bert(input_ids = 1,
-                            attention_mask  = attention_mask
+            enc = self.bert(input_ids = x1,
+                            attention_mask  = attention_mask,
+                            token_type_ids = token_type_ids,
                             )[0][:, 0, :]
 
         return self.fc(enc) # .squeeze() # .sigmoid()
+    
+    def calculate_difference(self, tensorA, tensorB):
+        return torch.nan_to_num(torch.abs(tensorA - tensorB) *2 / (tensorA + tensorB))
 
 
 def evaluate(model, iterator, threshold=None):
@@ -84,8 +106,8 @@ def evaluate(model, iterator, threshold=None):
     all_probs = []
     with torch.no_grad():
         for batch in iterator:
-            x, y = batch
-            logits = model(x)
+            x, y, attention_mask, token_type_ids= batch
+            logits = model(x, attention_mask, token_type_ids)
             probs = logits.softmax(dim=1)[:, 1]
             all_probs += probs.cpu().numpy().tolist()
             all_y += y.cpu().numpy().tolist()
@@ -126,12 +148,12 @@ def train_step(train_iter, model, optimizer, scheduler, hp):
     for i, batch in enumerate(train_iter):
         optimizer.zero_grad()
 
-        if len(batch) == 2:
-            x, y , attention_mask, token_type_ids= batch
-            prediction = model(x, attention_mask)
-        else:
-            x1, x2, y = batch
-            prediction = model(x1, x2)
+        # if len(batch) == 2:
+        x, y , attention_mask, token_type_ids, token_type_ids = batch
+        prediction = model(x, attention_mask, token_type_ids)
+        # else:
+        #     x1, x2, y = batch
+        #     prediction = model(x1, x2)
 
         loss = criterion(prediction, y.to(model.device))
 
@@ -140,6 +162,7 @@ def train_step(train_iter, model, optimizer, scheduler, hp):
                 scaled_loss.backward()
         else:
             loss.backward()
+        loss.backward()
         optimizer.step()
         scheduler.step()
         if i % 10 == 0: # monitoring
@@ -184,11 +207,11 @@ def train(trainset, validset, testset, run_tag, hp):
     model = DittoModel(device=device,
                        lm=hp.lm,
                        alpha_aug=hp.alpha_aug)
-    model = model.cuda()
+    # model = model.cuda()
     optimizer = AdamW(model.parameters(), lr=hp.lr)
 
-    if hp.fp16:
-        model, optimizer = amp.initialize(model, optimizer, opt_level='O2')
+    # if hp.fp16:
+    #     model, optimizer = amp.initialize(model, optimizer, opt_level='O2')
     num_steps = (len(trainset) // hp.batch_size) * hp.n_epochs
     scheduler = get_linear_schedule_with_warmup(optimizer,
                                                 num_warmup_steps=0,
@@ -196,6 +219,7 @@ def train(trainset, validset, testset, run_tag, hp):
 
     # logging with tensorboardX
     writer = SummaryWriter(log_dir=hp.logdir)
+    output = pd.read_csv(hp.logdir + "result.csv")
 
     best_dev_f1 = best_test_f1 = 0.0
     for epoch in range(1, hp.n_epochs+1):
@@ -226,6 +250,8 @@ def train(trainset, validset, testset, run_tag, hp):
                 torch.save(ckpt, ckpt_path)
 
         print(f"epoch {epoch}: dev_f1={dev_f1}, f1={test_f1}, best_f1={best_test_f1}")
+        output = output.append({"Tag": run_tag, "Data": hp.task, "Epochs": epoch, "dev_f1": dev_f1, "test_f1": test_f1, "Model": "numd"},
+                               ignore_index=True)
 
         # logging
         scalars = {'f1': dev_f1,
@@ -233,3 +259,4 @@ def train(trainset, validset, testset, run_tag, hp):
         writer.add_scalars(run_tag, scalars, epoch)
 
     writer.close()
+    output.to_csv(hp.logdir + "result.csv", index = False)

@@ -69,7 +69,7 @@ class DittoDataset(data.Dataset):
         right = self.pairs[idx][1]
 
         # left + right
-        x = self.tokenizer.encode(text=left,
+        x = self.tokenizer.encode_plus(text=left,
                                     text_pair=right,
                                     max_length=self.max_len,
                                     truncation=True,
@@ -120,5 +120,5 @@ class DittoDataset(data.Dataset):
             token_type_ids = [xi + [0]*(maxlen - len(xi)) for xi in token_type_ids]
             return torch.LongTensor(x12), \
                    torch.LongTensor(y), \
-                   attention_mask, \
-                   token_type_ids
+                   torch.LongTensor(attention_mask), \
+                   torch.LongTensor(token_type_ids)
