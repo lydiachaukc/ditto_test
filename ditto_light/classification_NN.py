@@ -44,6 +44,4 @@ class classification_NN(nn.Module):
         output = data
         for i, layer in enumerate(self.layers):
             output = self.activation(self.bn(layer(output)))
-        #return torch.softmax(self.layer_out(self.dropout(output)), dim =1)
-        #return torch.softmax(self.layer_out((output)), dim =1)
         return self.layer_out(output)

@@ -16,7 +16,7 @@ from tensorboardX import SummaryWriter
 from apex import amp
 
 import pandas as pd
-# from ditto_light.classification_NN import classification_NN
+from ditto_light.classification_NN import classification_NN
 # from torch.nn import CosineSimilarity
 
 lm_mp = {'roberta': 'roberta-base',
@@ -25,7 +25,7 @@ lm_mp = {'roberta': 'roberta-base',
 class DittoModel(nn.Module):
     """A baseline model for EM."""
 
-    def __init__(self, device='cuda', lm='roberta', alpha_aug=0.8):
+    def __init__(self, device='cuda', lm='roberta', alpha_aug=0.8, num_hidden_lyr=1):
         super().__init__()
         if lm in lm_mp:
             self.bert = AutoModel.from_pretrained(lm_mp[lm])
@@ -37,7 +37,7 @@ class DittoModel(nn.Module):
 
         # linear layer
         hidden_size = self.bert.config.hidden_size
-        self.fc = torch.nn.Linear(hidden_size, 2)
+        # self.fc = torch.nn.Linear(hidden_size, 2)
         
         # #---new
         # if (config.num_input_dimension != 1):
@@ -45,12 +45,12 @@ class DittoModel(nn.Module):
         #     self.calculate_similiarity = lambda a, b: cos(a,b).view(-1,1)
         # else:
         #     self.calculate_similiarity = self.calculate_difference
-            
-        # self.classifier = classification_NN(
-        #     #inputs_dimension = 1 + config.text_input_dimension,
-        #     inputs_dimension = config.text_input_dimension,
-        #     num_hidden_lyr = config.num_hidden_lyr,
-        #     dropout_prob = 0.2)
+        
+        self.classifier = classification_NN(
+            #inputs_dimension = 1 + config.text_input_dimension,
+            inputs_dimension = hidden_size,
+            num_hidden_lyr = num_hidden_lyr,
+            dropout_prob = 0.2)
 
 
     def forward(self, x1, attention_mask, token_type_ids, x2=None):
@@ -79,10 +79,10 @@ class DittoModel(nn.Module):
         else:
             enc = self.bert(input_ids = x1,
                             attention_mask  = attention_mask,
-                            token_type_ids = token_type_ids,
+                            token_type_ids = token_type_ids
                             )[0][:, 0, :]
 
-        return self.fc(enc) # .squeeze() # .sigmoid()
+        return self.classifier(enc) # .squeeze() # .sigmoid()
     
     def calculate_difference(self, tensorA, tensorB):
         return torch.nan_to_num(torch.abs(tensorA - tensorB) *2 / (tensorA + tensorB))
@@ -144,7 +144,6 @@ def train_step(train_iter, model, optimizer, scheduler, hp):
         None
     """
     criterion = nn.CrossEntropyLoss()
-    # criterion = nn.MSELoss()
     for i, batch in enumerate(train_iter):
         optimizer.zero_grad()
 
@@ -162,7 +161,7 @@ def train_step(train_iter, model, optimizer, scheduler, hp):
                 scaled_loss.backward()
         else:
             loss.backward()
-        loss.backward()
+        # loss.backward()
         optimizer.step()
         scheduler.step()
         if i % 10 == 0: # monitoring
@@ -207,11 +206,11 @@ def train(trainset, validset, testset, run_tag, hp):
     model = DittoModel(device=device,
                        lm=hp.lm,
                        alpha_aug=hp.alpha_aug)
-    # model = model.cuda()
+    model = model.cuda()
     optimizer = AdamW(model.parameters(), lr=hp.lr)
 
-    # if hp.fp16:
-    #     model, optimizer = amp.initialize(model, optimizer, opt_level='O2')
+    if hp.fp16:
+        model, optimizer = amp.initialize(model, optimizer, opt_level='O2')
     num_steps = (len(trainset) // hp.batch_size) * hp.n_epochs
     scheduler = get_linear_schedule_with_warmup(optimizer,
                                                 num_warmup_steps=0,
