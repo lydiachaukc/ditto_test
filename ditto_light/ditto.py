@@ -148,7 +148,7 @@ def train_step(train_iter, model, optimizer, scheduler, hp):
         optimizer.zero_grad()
 
         # if len(batch) == 2:
-        x, y , attention_mask, token_type_ids, token_type_ids = batch
+        x, y , attention_mask, token_type_ids = batch
         prediction = model(x, attention_mask, token_type_ids)
         # else:
         #     x1, x2, y = batch
