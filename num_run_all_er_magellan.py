@@ -51,8 +51,8 @@ for dataset, op, lm in zip(datasets, ops, lms):
               --fp16 \
               --lm %s \
               --n_epochs %d \
+	      --summarize \
               --run_id %d""" % (dataset, batch_size, lm, epochs, run_id)
-              --summarize'
                 if da:
                     cmd += ' --da %s' % op
                 if dk:
