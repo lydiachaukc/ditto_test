@@ -149,7 +149,7 @@ class Summarizer:
         return numeric_result, text
 
 
-    def transform_file(self, input_fn, max_len=256, overwrite=False):
+    def transform_file(self, input_fn, numeric_col_names, max_len=256, overwrite=False):
         """Summarize all lines of a tsv file.
 
         Run the summarizer. If the output already exists, just return the file name.
