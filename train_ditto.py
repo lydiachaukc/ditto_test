@@ -17,7 +17,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=str, default="Dirty/Walmart-Amazon")
     parser.add_argument("--run_id", type=int, default=0)
-    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--max_len", type=int, default=256)
     parser.add_argument("--lr", type=float, default=3e-5)
     parser.add_argument("--n_epochs", type=int, default=20)
