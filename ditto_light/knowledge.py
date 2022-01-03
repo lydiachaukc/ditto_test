@@ -43,7 +43,7 @@ class DKInjector:
             with open(out_fn, 'w') as fout:
                 for line in open(input_fn):
                     LL = line.split('\t')
-                    if len(LL) == 3:
+                    if len(LL) == 5:
                         entry0 = self.transform(LL[0])
                         entry1 = self.transform(LL[1])
                         fout.write(entry0 + '\t' + entry1 + '\t' + LL[2] + '\t' + LL[3] + '\t' + LL[4])

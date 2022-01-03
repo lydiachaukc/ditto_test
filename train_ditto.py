@@ -11,7 +11,7 @@ sys.path.insert(0, "Snippext_public")
 from ditto_light.dataset import DittoDataset
 from ditto_light.summarize import Summarizer
 from ditto_light.knowledge import *
-from ditto_light.ditto import train
+# from ditto_light.ditto import train
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -28,7 +28,7 @@ if __name__=="__main__":
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     parser.add_argument("--da", type=str, default=None)
     parser.add_argument("--alpha_aug", type=float, default=0.8)
-    parser.add_argument("--dk", type=str, default=None)
+    parser.add_argument("--dk", type=str, default="general")
     parser.add_argument("--summarize", dest="summarize", action="store_true")
     parser.add_argument("--size", type=int, default=None)
 
@@ -61,6 +61,7 @@ if __name__=="__main__":
     numeric_feature_cols = config['number_feature_columns']
 
     # summarize the sequences up to the max sequence length
+    hp.summarize = True
     if hp.summarize:
         summarizer = Summarizer(config, lm=hp.lm)
         trainset = summarizer.transform_file(trainset, max_len=hp.max_len, numeric_col_names=numeric_feature_cols)
@@ -86,8 +87,8 @@ if __name__=="__main__":
     valid_dataset = DittoDataset(validset, lm=hp.lm)
     test_dataset = DittoDataset(testset, lm=hp.lm)
 
-    # train and evaluate the model
-    train(train_dataset,
-          valid_dataset,
-          test_dataset,
-          run_tag, hp)
+    # # train and evaluate the model
+    # train(train_dataset,
+    #       valid_dataset,
+    #       test_dataset,
+    #       run_tag, hp)
