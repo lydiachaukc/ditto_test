@@ -35,7 +35,7 @@ class DittoDataset(data.Dataset):
         if isinstance(path, list):
             lines = path
         else:
-            lines = open(path)
+            lines = open(path, encoding = "ISO-8859-1")
 
         for line in lines:
             s1, s2, num1, num2, label = line.strip().split('\t')
@@ -114,7 +114,7 @@ class DittoDataset(data.Dataset):
                         Elements of x1 and x2 are padded to the same length
             LongTensor: a batch of labels, (batch_size,)
         """
-        if len(batch[0]) == 3:
+        if len(batch[0]) == 9:
             x1, y, attention_mask, token_type_ids, num1, num2, x_aug, attention_mask_aug, token_type_ids_aug = zip(*batch)
 
             maxlen = max([len(x) for x in x1+x_aug])

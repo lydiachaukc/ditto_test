@@ -169,7 +169,7 @@ def train_step(train_iter, model, optimizer, scheduler, hp):
                 scaled_loss.backward()
         else:
             loss.backward()
-        
+        # loss.backward()
         optimizer.step()
         scheduler.step()
         if i % 10 == 0: # monitoring

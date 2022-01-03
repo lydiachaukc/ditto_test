@@ -11,7 +11,7 @@ sys.path.insert(0, "Snippext_public")
 from ditto_light.dataset import DittoDataset
 from ditto_light.summarize import Summarizer
 from ditto_light.knowledge import *
-# from ditto_light.ditto import train
+from ditto_light.ditto import train
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -26,9 +26,9 @@ if __name__=="__main__":
     parser.add_argument("--logdir", type=str, default="checkpoints/")
     parser.add_argument("--lm", type=str, default='bert-base-uncased')
     parser.add_argument("--fp16", dest="fp16", action="store_true")
-    parser.add_argument("--da", type=str, default=None)
+    parser.add_argument("--da", type=str, default="swap")
     parser.add_argument("--alpha_aug", type=float, default=0.8)
-    parser.add_argument("--dk", type=str, default="general")
+    parser.add_argument("--dk", type=str, default=None)
     parser.add_argument("--summarize", dest="summarize", action="store_true")
     parser.add_argument("--size", type=int, default=None)
 
@@ -87,8 +87,8 @@ if __name__=="__main__":
     valid_dataset = DittoDataset(validset, lm=hp.lm)
     test_dataset = DittoDataset(testset, lm=hp.lm)
 
-    # # train and evaluate the model
-    # train(train_dataset,
-    #       valid_dataset,
-    #       test_dataset,
-    #       run_tag, hp)
+    # train and evaluate the model
+    train(train_dataset,
+          valid_dataset,
+          test_dataset,
+          run_tag, hp)
