@@ -39,8 +39,8 @@ for dataset, op, lm in zip(datasets, ops, lms):
     else:
         batch_size, epochs = 12, 15
 
-    for da in [True, False]:
-        for dk in [True, False]:
+    for da in [False, True]:
+        for dk in [False, True]:
             for run_id in range(1):
                 cmd = """python train_ditto.py \
               --task %s \
